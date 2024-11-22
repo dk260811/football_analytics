@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>League Data</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <style>
+        /* Enable horizontal scrolling */
+        .table-wrapper {
+            overflow-x: auto;
+            position: relative;
+        }
+
+        /* Freeze the first column */
+        .table th:first-child,
+        .table td:first-child {
+            position: sticky;
+            left: 0;
+            background-color: #fff; /* Set background color */
+            z-index: 2; /* Ensure the first column stays above other content */
+        }
+
+        /* Add extra z-index for the header */
+        .table th:first-child {
+            z-index: 3;
+        }
+
+        /* Cursor pointer for sortable columns */
+        .sortable {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="container">
+    <h1 class="mt-5">League Data</h1>
+
+    <!-- Filter Form -->
+    <form method="get" class="row g-3 mt-3">
+        <div class="col-md-6">
+            <label for="league" class="form-label">League</label>
+            <select id="league" name="league" class="form-select">
+                <option value="">Select League</option>
+                {% for league in leagues %}
+                    <option value="{{ league }}" {% if league == selected_league %}selected{% endif %}>{{ league }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label for="season" class="form-label">Season</label>
+            <select id="season" name="season" class="form-select">
+                <option value="">Select Season</option>
+                {% for season in seasons %}
+                    <option value="{{ season }}" {% if season == selected_season %}selected{% endif %}>{{ season }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </form>
+
+    <!-- Data Table -->
+    <div class="table-wrapper">
+        <table class="table table-striped mt-3" id="leagueTable">
+            <thead>
+                <tr>
+                    {% for col in columns %}
+                        <th class="{% if forloop.counter0 > 0 %}sortable{% endif %}" 
+                            {% if forloop.counter0 > 0 %}onclick="sortTable({{ forloop.counter0 }})"{% endif %}>
+                            {{ col }} {% if forloop.counter0 > 0 %}&#x25B2;&#x25BC;{% endif %}
+                        </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in league_data %}
+                    <tr>
+                        {% for cell in row %}
+                            <td>
+                                {% if forloop.counter0 == 0 %} <!-- Check if this is the first column (team_name) -->
+                                    <a href="{% url 'match_details' team_name=cell league=selected_league season=selected_season %}">
+                                        {{ cell }}
+                                    </a>
+                                {% else %}
+                                    {{ cell }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- JavaScript for Sorting -->
+    <script>
+        function sortTable(columnIndex) {
+            const table = document.getElementById("leagueTable");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+            const ascending = table.dataset.sortOrder !== "asc"; // Toggle sort order
+
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.children[columnIndex].innerText.trim();
+                const cellB = rowB.children[columnIndex].innerText.trim();
+
+                // Handle numeric and string sorting
+                const valueA = isNaN(cellA) ? cellA : parseFloat(cellA);
+                const valueB = isNaN(cellB) ? cellB : parseFloat(cellB);
+
+                return ascending ? (valueA > valueB ? 1 : -1) : (valueA < valueB ? 1 : -1);
+            });
+
+            // Append sorted rows back to the table body
+            rows.forEach(row => tbody.appendChild(row));
+
+            // Update sort order
+            table.dataset.sortOrder = ascending ? "asc" : "desc";
+        }
+    </script>
+</body>
+</html>
