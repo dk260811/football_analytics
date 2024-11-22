@@ -34,3 +34,9 @@ urlpatterns = [
     
 ]
 
+
+# Update git
+# git status
+# git add .
+# git commit -m "Your commit message here"
+# git push
