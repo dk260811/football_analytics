@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db import connection
+import requests
 
 def league_data_view(request):
     # Fetch leagues and seasons for the filters
@@ -141,3 +142,157 @@ def match_details(request, team_name, league, season):
         'columns': columns,
     }
     return render(request, 'football_data/match_details.html', context)
+
+"""
+def upcoming_games(request):
+    games = []
+    error_message = None
+
+    if request.method == "POST":
+        # Get startdate and enddate from the form
+        startdate = request.POST.get("startdate")
+        enddate = request.POST.get("enddate")
+
+        # Your API key (replace with your actual key)
+        api_key = "928d7e45d921850a05f77b1f6e3fb7b137bd6184c447a44c9d9f6f0cab380ff9"
+
+        # API endpoint
+        url = f"https://api.football-data-api.com/todays-matches?key={api_key}&date={startdate}"
+
+        try:
+            # Fetch games for the start date
+            response = requests.get(url)
+            data = response.json()
+
+            if data.get("success"):
+                games = [
+                    {
+                        "id": game["id"],
+                        "homeID": game["homeID"],
+                        "awayID": game["awayID"],
+                        "season": game["season"],
+                        "status": game["status"],
+                        "roundID": game["roundID"],
+                        "game_week": game["game_week"],
+                        "competition_id": game["competition_id"],
+                    }
+                    for game in data["data"]
+                ]
+            else:
+                error_message = "Could not fetch games. Please check your API key or input data."
+        except Exception as e:
+            error_message = f"An error occurred: {e}"
+
+    return render(
+        request,
+        "football_data/upcoming_games.html",
+        {"games": games, "error_message": error_message},
+    )
+"""
+
+
+import requests
+from django.db import connection
+from django.shortcuts import render
+
+def upcoming_games(request):
+    games = []
+    error_message = None
+
+    if request.method == "POST":
+        # Get startdate and enddate from the form
+        startdate = request.POST.get("startdate")
+        enddate = request.POST.get("enddate")
+
+        # Your API key (replace with your actual key)
+        api_key = "__________"
+
+        # API endpoint
+        url = f"https://api.football-data-api.com/todays-matches?key={api_key}&date={startdate}"
+
+        try:
+            # Fetch games for the start date
+            response = requests.get(url)
+            data = response.json()
+
+            if data.get("success"):
+                for game in data["data"]:
+                    competition_id = game["competition_id"]
+                    #table_name = f"match_data_{competition_id}_final"
+                    table_name = "match_data_12325_final"
+                    #home_id = game["homeID"]
+                    home_id = 152
+                    away_id = game["awayID"]
+
+                    # Default values for averages and team names
+                    home_corners_avg = "NA"
+                    away_corners_avg = "NA"
+                    home_team_name = "NA"
+                    away_team_name = "NA"
+
+                    try:
+                        with connection.cursor() as cursor:
+                            # Get Home Team Name
+                            cursor.execute("""
+                                SELECT team_name
+                                FROM {table_name}
+                                WHERE team_id = %s
+                            """, [home_id])
+                            home_team_result = cursor.fetchone()
+                            home_team_name = home_team_result[0] if home_team_result else "NA"
+
+                            # Get Away Team Name
+                            cursor.execute("""
+                                SELECT team_name
+                                FROM {table_name}
+                                WHERE team_id = %s
+                            """, [away_id])
+                            away_team_result = cursor.fetchone()
+                            away_team_name = away_team_result[0] if away_team_result else "NA"
+
+                            # Get Home Corners Average
+                            cursor.execute("""
+                                SELECT AVG(corners_for)
+                                FROM {table_name}
+                                WHERE team_id = %s
+                            """, [home_id])
+                            home_corners_result = cursor.fetchone()
+                            home_corners_avg = round(home_corners_result[0], 2) if home_corners_result and home_corners_result[0] is not None else "NA"
+
+                            # Get Away Corners Average
+                            cursor.execute("""
+                                SELECT AVG(corners_for)
+                                FROM {table_name}
+                                WHERE team_id = %s
+                            """, [away_id])
+                            away_corners_result = cursor.fetchone()
+                            away_corners_avg = round(away_corners_result[0], 2) if away_corners_result and away_corners_result[0] is not None else "NA"
+                    except Exception as e:
+                        # Log or handle database-related errors as needed
+                        pass
+
+                    # Add the game data to the games list
+                    games.append({
+                        "id": game["id"],
+                        "homeID": game["homeID"],
+                        "awayID": game["awayID"],
+                        "home_team_name": home_team_name,
+                        "away_team_name": away_team_name,
+                        "season": game["season"],
+                        "status": game["status"],
+                        "roundID": game["roundID"],
+                        "game_week": game["game_week"],
+                        "competition_id": game["competition_id"],
+                        "home_corners_avg": home_corners_avg,
+                        "away_corners_avg": away_corners_avg,
+                    })
+            else:
+                error_message = "Could not fetch games. Please check your API key or input data."
+        except Exception as e:
+            error_message = f"An error occurred: {e}"
+
+    return render(
+        request,
+        "football_data/upcoming_games.html",
+        {"games": games, "error_message": error_message},
+    )
