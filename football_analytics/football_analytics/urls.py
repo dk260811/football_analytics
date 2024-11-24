@@ -40,3 +40,8 @@ urlpatterns = [
 # git add .
 # git commit -m "Your commit message here"
 # git push
+
+# me shkru dikun cka kom bo n projekt deri qetash
+# mi marr krejt ligat sezonat qe i kom available n heroku
+# me qit filtera per me dal veq home away
+# mi marr local krejt t dhanat qe mvyne per regressione niher veq qeto t thjeshtat mandej edhe ato t komplikumet
