@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.db import connection
 import requests
+from datetime import datetime, timedelta
 
 def league_data_view(request):
     # Fetch leagues and seasons for the filters
@@ -191,10 +192,6 @@ def upcoming_games(request):
 """
 
 
-import requests
-from django.db import connection
-from django.shortcuts import render
-
 def upcoming_games(request):
     games = []
     error_message = None
@@ -204,95 +201,124 @@ def upcoming_games(request):
         startdate = request.POST.get("startdate")
         enddate = request.POST.get("enddate")
 
-        # Your API key (replace with your actual key)
-        api_key = "__________"
-
-        # API endpoint
-        url = f"https://api.football-data-api.com/todays-matches?key={api_key}&date={startdate}"
-
+        # Convert startdate and enddate to datetime objects
         try:
-            # Fetch games for the start date
-            response = requests.get(url)
-            data = response.json()
+            start_date = datetime.strptime(startdate, "%Y-%m-%d")
+            end_date = datetime.strptime(enddate, "%Y-%m-%d")
+        except ValueError:
+            error_message = "Invalid date format. Please enter dates in YYYY-MM-DD format."
+            return render(request, "football_data/upcoming_games.html", {"games": games, "error_message": error_message})
 
-            if data.get("success"):
-                for game in data["data"]:
-                    competition_id = game["competition_id"]
-                    #table_name = f"match_data_{competition_id}_final"
-                    table_name = "match_data_12325_final"
-                    #home_id = game["homeID"]
-                    home_id = 152
-                    away_id = game["awayID"]
+        # Your API key (replace with your actual key)
+        api_key = "______________"
+        base_url = "https://api.football-data-api.com/todays-matches"
 
-                    # Default values for averages and team names
-                    home_corners_avg = "NA"
-                    away_corners_avg = "NA"
-                    home_team_name = "NA"
-                    away_team_name = "NA"
+        # Iterate through each date in the range
+        current_date = start_date
+        while current_date <= end_date:
+            params = {
+                "key": api_key,
+                "date": current_date.strftime('%Y-%m-%d')
+            }
 
-                    try:
-                        with connection.cursor() as cursor:
-                            # Get Home Team Name
-                            cursor.execute("""
-                                SELECT team_name
-                                FROM {table_name}
-                                WHERE team_id = %s
-                            """, [home_id])
-                            home_team_result = cursor.fetchone()
-                            home_team_name = home_team_result[0] if home_team_result else "NA"
+            try:
+                # Fetch matches for the current date
+                response = requests.get(base_url, params=params)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("success"):
+                        for game in data["data"]:
+                            competition_id = game["competition_id"]
+                            table_name = f"match_data_{competition_id}_final"
+                            home_id = game["homeID"]
+                            away_id = game["awayID"]
 
-                            # Get Away Team Name
-                            cursor.execute("""
-                                SELECT team_name
-                                FROM {table_name}
-                                WHERE team_id = %s
-                            """, [away_id])
-                            away_team_result = cursor.fetchone()
-                            away_team_name = away_team_result[0] if away_team_result else "NA"
+                            # Default values for averages and team names
+                            home_corners_avg = "NA"
+                            away_corners_avg = "NA"
+                            home_team_name = "NA"
+                            away_team_name = "NA"
+                            league_name = "NA"
 
-                            # Get Home Corners Average
-                            cursor.execute("""
-                                SELECT AVG(corners_for)
-                                FROM {table_name}
-                                WHERE team_id = %s
-                            """, [home_id])
-                            home_corners_result = cursor.fetchone()
-                            home_corners_avg = round(home_corners_result[0], 2) if home_corners_result and home_corners_result[0] is not None else "NA"
+                            try:
+                                with connection.cursor() as cursor:
+                                    # Get League Name
+                                    cursor.execute(f"""
+                                        SELECT name
+                                        FROM possible_leagues_and_seasons
+                                        WHERE season_id = {competition_id}
+                                    """)
+                                    league_result = cursor.fetchone()
+                                    league_name = league_result[0] if league_result else "NA"
 
-                            # Get Away Corners Average
-                            cursor.execute("""
-                                SELECT AVG(corners_for)
-                                FROM {table_name}
-                                WHERE team_id = %s
-                            """, [away_id])
-                            away_corners_result = cursor.fetchone()
-                            away_corners_avg = round(away_corners_result[0], 2) if away_corners_result and away_corners_result[0] is not None else "NA"
-                    except Exception as e:
-                        # Log or handle database-related errors as needed
-                        pass
+                                    # Get Home Team Name
+                                    cursor.execute(f"""
+                                        SELECT team_name
+                                        FROM {table_name}
+                                        WHERE teamid = {home_id}
+                                    """)
+                                    home_team_result = cursor.fetchone()
+                                    home_team_name = home_team_result[0] if home_team_result else "NA"
 
-                    # Add the game data to the games list
-                    games.append({
-                        "id": game["id"],
-                        "homeID": game["homeID"],
-                        "awayID": game["awayID"],
-                        "home_team_name": home_team_name,
-                        "away_team_name": away_team_name,
-                        "season": game["season"],
-                        "status": game["status"],
-                        "roundID": game["roundID"],
-                        "game_week": game["game_week"],
-                        "competition_id": game["competition_id"],
-                        "home_corners_avg": home_corners_avg,
-                        "away_corners_avg": away_corners_avg,
-                    })
-            else:
-                error_message = "Could not fetch games. Please check your API key or input data."
-        except Exception as e:
-            error_message = f"An error occurred: {e}"
+                                    # Get Away Team Name
+                                    cursor.execute(f"""
+                                        SELECT team_name
+                                        FROM {table_name}
+                                        WHERE teamid = {away_id}
+                                    """)
+                                    away_team_result = cursor.fetchone()
+                                    away_team_name = away_team_result[0] if away_team_result else "NA"
+
+                                    # Get Home Corners Average
+                                    cursor.execute(f"""
+                                        SELECT AVG(corners_for)
+                                        FROM {table_name}
+                                        WHERE teamid = {home_id}
+                                    """)
+                                    home_corners_result = cursor.fetchone()
+                                    home_corners_avg = round(home_corners_result[0], 2) if home_corners_result and home_corners_result[0] is not None else "NA"
+
+                                    # Get Away Corners Average
+                                    cursor.execute(f"""
+                                        SELECT AVG(corners_for)
+                                        FROM {table_name}
+                                        WHERE teamid = {away_id}
+                                    """)
+                                    away_corners_result = cursor.fetchone()
+                                    away_corners_avg = round(away_corners_result[0], 2) if away_corners_result and away_corners_result[0] is not None else "NA"
+                            except Exception as e:
+                                # Log or handle database-related errors as needed
+                                pass
+
+                            # Add the game data to the games list
+                            games.append({
+                                "date": current_date.strftime('%Y-%m-%d'),
+                                "league": league_name,
+                                "homeID": game["homeID"],
+                                "awayID": game["awayID"],
+                                "home_team_name": home_team_name,
+                                "away_team_name": away_team_name,
+                                "season": game["season"],
+                                "status": game["status"],
+                                "roundID": game["roundID"],
+                                "game_week": game["game_week"],
+                                "competition_id": game["competition_id"],
+                                "home_corners_avg": home_corners_avg,
+                                "away_corners_avg": away_corners_avg,
+                            })
+                    else:
+                        print(f"No matches found on {current_date.strftime('%Y-%m-%d')}")
+                else:
+                    print(f"Error fetching matches on {current_date.strftime('%Y-%m-%d')}: {response.status_code}")
+            except Exception as e:
+                error_message = f"An error occurred: {e}"
+                break
+
+            current_date += timedelta(days=1)
 
     return render(
         request,
         "football_data/upcoming_games.html",
         {"games": games, "error_message": error_message},
     )
+

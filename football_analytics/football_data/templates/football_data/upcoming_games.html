@@ -33,16 +33,16 @@
     {% endif %}
 
     <!-- Games Table -->
-    {% if games %}
+        {% if games %}
         <table class="table table-striped mt-3">
             <thead>
                 <tr>
-                    <th>Match ID</th>
+                    <th>Game Date</th>
+                    <th>League</th>
                     <th>Home Team</th>
                     <th>Away Team</th>
                     <th>Season</th>
                     <th>Status</th>
-                    <th>Round ID</th>
                     <th>Game Week</th>
                     <th>Home Corners Average</th>
                     <th>Away Corners Average</th>
@@ -51,12 +51,12 @@
             <tbody>
                 {% for game in games %}
                     <tr>
-                        <td>{{ game.id }}</td>
+                        <td>{{ game.date }}</td>
+                        <td>{{ game.league }}</td>
                         <td>{{ game.home_team_name }}</td>
                         <td>{{ game.away_team_name }}</td>
                         <td>{{ game.season }}</td>
                         <td>{{ game.status }}</td>
-                        <td>{{ game.roundID }}</td>
                         <td>{{ game.game_week }}</td>
                         <td>{{ game.home_corners_avg }}</td>
                         <td>{{ game.away_corners_avg }}</td>
@@ -64,6 +64,8 @@
                 {% endfor %}
             </tbody>
         </table>
+        
+    
     
     
     {% endif %}
