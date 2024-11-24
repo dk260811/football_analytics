@@ -144,53 +144,13 @@ def match_details(request, team_name, league, season):
     }
     return render(request, 'football_data/match_details.html', context)
 
-"""
-def upcoming_games(request):
-    games = []
-    error_message = None
 
-    if request.method == "POST":
-        # Get startdate and enddate from the form
-        startdate = request.POST.get("startdate")
-        enddate = request.POST.get("enddate")
 
-        # Your API key (replace with your actual key)
-        api_key = "928d7e45d921850a05f77b1f6e3fb7b137bd6184c447a44c9d9f6f0cab380ff9"
 
-        # API endpoint
-        url = f"https://api.football-data-api.com/todays-matches?key={api_key}&date={startdate}"
-
-        try:
-            # Fetch games for the start date
-            response = requests.get(url)
-            data = response.json()
-
-            if data.get("success"):
-                games = [
-                    {
-                        "id": game["id"],
-                        "homeID": game["homeID"],
-                        "awayID": game["awayID"],
-                        "season": game["season"],
-                        "status": game["status"],
-                        "roundID": game["roundID"],
-                        "game_week": game["game_week"],
-                        "competition_id": game["competition_id"],
-                    }
-                    for game in data["data"]
-                ]
-            else:
-                error_message = "Could not fetch games. Please check your API key or input data."
-        except Exception as e:
-            error_message = f"An error occurred: {e}"
-
-    return render(
-        request,
-        "football_data/upcoming_games.html",
-        {"games": games, "error_message": error_message},
-    )
-"""
-
+import requests
+from datetime import datetime, timedelta
+from django.db import connection
+from django.shortcuts import render
 
 def upcoming_games(request):
     games = []
@@ -210,7 +170,7 @@ def upcoming_games(request):
             return render(request, "football_data/upcoming_games.html", {"games": games, "error_message": error_message})
 
         # Your API key (replace with your actual key)
-        api_key = "______________"
+        api_key = "__________"
         base_url = "https://api.football-data-api.com/todays-matches"
 
         # Iterate through each date in the range
@@ -233,12 +193,12 @@ def upcoming_games(request):
                             home_id = game["homeID"]
                             away_id = game["awayID"]
 
-                            # Default values for averages and team names
-                            home_corners_avg = "NA"
-                            away_corners_avg = "NA"
-                            home_team_name = "NA"
-                            away_team_name = "NA"
-                            league_name = "NA"
+                            # Default values for averages, team names, and metrics
+                            home_corners_avg = away_corners_avg = corners_diff = "NA"
+                            home_shots = away_shots = shots_diff = "NA"
+                            home_shots_on_target = away_shots_on_target = shots_on_target_diff = "NA"
+                            home_yellow_cards = away_yellow_cards = yellow_cards_diff = "NA"
+                            home_team_name = away_team_name = league_name = "NA"
 
                             try:
                                 with connection.cursor() as cursor:
@@ -286,25 +246,118 @@ def upcoming_games(request):
                                     """)
                                     away_corners_result = cursor.fetchone()
                                     away_corners_avg = round(away_corners_result[0], 2) if away_corners_result and away_corners_result[0] is not None else "NA"
+
+                                    # Calculate Corners Difference
+                                    if home_corners_avg != "NA" and away_corners_avg != "NA":
+                                        try:
+                                            corners_diff = abs(float(home_corners_avg) - float(away_corners_avg))
+                                        except ValueError:
+                                            corners_diff = "NA"
+
+                                    try:
+                                        corners_diff = round(float(corners_diff), 2)
+                                    except (ValueError, TypeError):
+                                        corners_diff = "NA"  # Or any default value you prefer
+
+                                    # Get Home Shots
+                                    cursor.execute(f"""
+                                        SELECT AVG(shots_for)
+                                        FROM {table_name}
+                                        WHERE teamid = {home_id}
+                                    """)
+                                    home_shots_result = cursor.fetchone()
+                                    home_shots = round(home_shots_result[0], 2) if home_shots_result and home_shots_result[0] is not None else "NA"
+
+                                    # Get Away Shots
+                                    cursor.execute(f"""
+                                        SELECT AVG(shots_for)
+                                        FROM {table_name}
+                                        WHERE teamid = {away_id}
+                                    """)
+                                    away_shots_result = cursor.fetchone()
+                                    away_shots = round(away_shots_result[0], 2) if away_shots_result and away_shots_result[0] is not None else "NA"
+
+                                    # Calculate Shots Difference
+                                    if home_shots != "NA" and away_shots != "NA":
+                                        try:
+                                            shots_diff = abs(float(home_shots) - float(away_shots))
+                                        except ValueError:
+                                            shots_diff = "NA"
+
+                                    # Get Home Shots on Target
+                                    cursor.execute(f"""
+                                        SELECT AVG(shotsontarget_for)
+                                        FROM {table_name}
+                                        WHERE teamid = {home_id}
+                                    """)
+                                    home_shots_on_target_result = cursor.fetchone()
+                                    home_shots_on_target = round(home_shots_on_target_result[0], 2) if home_shots_on_target_result and home_shots_on_target_result[0] is not None else "NA"
+
+                                    # Get Away Shots on Target
+                                    cursor.execute(f"""
+                                        SELECT AVG(shotsontarget_for)
+                                        FROM {table_name}
+                                        WHERE teamid = {away_id}
+                                    """)
+                                    away_shots_on_target_result = cursor.fetchone()
+                                    away_shots_on_target = round(away_shots_on_target_result[0], 2) if away_shots_on_target_result and away_shots_on_target_result[0] is not None else "NA"
+
+                                    # Calculate Shots on Target Difference
+                                    if home_shots_on_target != "NA" and away_shots_on_target != "NA":
+                                        try:
+                                            shots_on_target_diff = abs(float(home_shots_on_target) - float(away_shots_on_target))
+                                        except ValueError:
+                                            shots_on_target_diff = "NA"
+
+                                    # Get Home Yellow Cards
+                                    cursor.execute(f"""
+                                        SELECT AVG(yellow_cards_for)
+                                        FROM {table_name}
+                                        WHERE teamid = {home_id}
+                                    """)
+                                    home_yellow_cards_result = cursor.fetchone()
+                                    home_yellow_cards = round(home_yellow_cards_result[0], 2) if home_yellow_cards_result and home_yellow_cards_result[0] is not None else "NA"
+
+                                    # Get Away Yellow Cards
+                                    cursor.execute(f"""
+                                        SELECT AVG(yellow_cards_for)
+                                        FROM {table_name}
+                                        WHERE teamid = {away_id}
+                                    """)
+                                    away_yellow_cards_result = cursor.fetchone()
+                                    away_yellow_cards = round(away_yellow_cards_result[0], 2) if away_yellow_cards_result and away_yellow_cards_result[0] is not None else "NA"
+
+                                    # Calculate Yellow Cards Difference
+                                    if home_yellow_cards != "NA" and away_yellow_cards != "NA":
+                                        try:
+                                            yellow_cards_diff = abs(float(home_yellow_cards) - float(away_yellow_cards))
+                                        except ValueError:
+                                            yellow_cards_diff = "NA"
                             except Exception as e:
-                                # Log or handle database-related errors as needed
                                 pass
 
                             # Add the game data to the games list
                             games.append({
                                 "date": current_date.strftime('%Y-%m-%d'),
-                                "league": league_name,
-                                "homeID": game["homeID"],
-                                "awayID": game["awayID"],
-                                "home_team_name": home_team_name,
-                                "away_team_name": away_team_name,
                                 "season": game["season"],
                                 "status": game["status"],
                                 "roundID": game["roundID"],
                                 "game_week": game["game_week"],
-                                "competition_id": game["competition_id"],
+                                "league": league_name,
+                                "home_team_name": home_team_name,
+                                "away_team_name": away_team_name,
                                 "home_corners_avg": home_corners_avg,
                                 "away_corners_avg": away_corners_avg,
+                                "corners_diff": corners_diff,
+                                "home_shots": home_shots,
+                                "away_shots": away_shots,
+                                "shots_diff": shots_diff,
+                                "home_shots_on_target": home_shots_on_target,
+                                "away_shots_on_target": away_shots_on_target,
+                                "shots_on_target_diff": shots_on_target_diff,
+                                "home_yellow_cards": home_yellow_cards,
+                                "away_yellow_cards": away_yellow_cards,
+                                "yellow_cards_diff": yellow_cards_diff,
                             })
                     else:
                         print(f"No matches found on {current_date.strftime('%Y-%m-%d')}")
