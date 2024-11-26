@@ -30,29 +30,6 @@
         .sortable {
             cursor: pointer;
         }
-
-        /* Duplicate scroller container */
-        .scroller-container {
-            overflow-x: auto;
-            white-space: nowrap;
-            position: sticky;
-            top: 0;
-            background: #fff;
-            z-index: 10;
-        }
-
-        .scroller-container::-webkit-scrollbar {
-            height: 10px;
-        }
-
-        .scroller-container::-webkit-scrollbar-thumb {
-            background-color: #ccc;
-            border-radius: 5px;
-        }
-
-        .scroller-container::-webkit-scrollbar-track {
-            background-color: #f1f1f1;
-        }
     </style>
 </head>
 <body class="container">
@@ -83,35 +60,9 @@
         </div>
     </form>
 
-    <!-- Buttons for Home/Away/All -->
-    {% if selected_league and selected_season %}
-    <div class="mt-4">
-        <h3>Filter Games</h3>
-        <div class="btn-group" role="group" aria-label="Home/Away/All Filters">
-            <a href="?league={{ selected_league }}&season={{ selected_season }}&home_or_away=Homegame" 
-               class="btn btn-outline-primary {% if selected_home_or_away == 'Home' %}active{% endif %}">
-                Home
-            </a>
-            <a href="?league={{ selected_league }}&season={{ selected_season }}&home_or_away=Awaygame" 
-               class="btn btn-outline-primary {% if selected_home_or_away == 'Away' %}active{% endif %}">
-                Away
-            </a>
-            <a href="?league={{ selected_league }}&season={{ selected_season }}" 
-               class="btn btn-outline-primary {% if not selected_home_or_away %}active{% endif %}">
-                All
-            </a>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Duplicate Scroller -->
-    <div class="scroller-container">
-        <div style="width: max-content;"></div>
-    </div>
-
     <!-- Data Table -->
-    <div class="table-wrapper mt-4">
-        <table class="table table-striped" id="leagueTable">
+    <div class="table-wrapper">
+        <table class="table table-striped mt-3" id="leagueTable">
             <thead>
                 <tr>
                     {% for col in columns %}
@@ -128,7 +79,9 @@
                         {% for cell in row %}
                             <td>
                                 {% if forloop.counter0 == 0 %} <!-- Check if this is the first column (team_name) -->
-                                    <a href="{% url 'match_details' team_name=cell league=selected_league season=selected_season %}">{{ cell }}</a>
+                                    <a href="{% url 'match_details' team_name=cell league=selected_league season=selected_season %}">
+                                        {{ cell }}
+                                    </a>
                                 {% else %}
                                     {{ cell }}
                                 {% endif %}
@@ -167,16 +120,6 @@
             // Update sort order
             table.dataset.sortOrder = ascending ? "asc" : "desc";
         }
-
-        // Synchronize duplicate scrollers
-        const scroller = document.querySelector('.scroller-container');
-        const tableWrapper = document.querySelector('.table-wrapper');
-        scroller.addEventListener('scroll', () => {
-            tableWrapper.scrollLeft = scroller.scrollLeft;
-        });
-        tableWrapper.addEventListener('scroll', () => {
-            scroller.scrollLeft = tableWrapper.scrollLeft;
-        });
     </script>
 </body>
 </html>

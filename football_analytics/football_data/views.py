@@ -3,21 +3,23 @@ from django.db import connection
 import requests
 from datetime import datetime, timedelta
 
+
 def league_data_view(request):
     # Fetch leagues and seasons for the filters
     with connection.cursor() as cursor:
         cursor.execute("""
-            SELECT DISTINCT name FROM possible_leagues_and_seasons ORDER BY name
+            SELECT DISTINCT name FROM "possible_leagues_and_seasons_NEW" WHERE data_available like 'yes' ORDER BY name
         """)
         leagues = [row[0] for row in cursor.fetchall()]
 
         cursor.execute("""
-            SELECT DISTINCT season_year FROM possible_leagues_and_seasons ORDER BY season_year
+            SELECT DISTINCT season_year FROM "possible_leagues_and_seasons_NEW" WHERE data_available like 'yes' ORDER BY season_year
         """)
         seasons = [row[0] for row in cursor.fetchall()]
 
     selected_league = request.GET.get('league')
     selected_season = request.GET.get('season')
+    selected_home_or_away = request.GET.get('home_or_away')
     league_data = []
     columns = []
 
@@ -34,8 +36,8 @@ def league_data_view(request):
                 season_id = result[0]
                 table_name = f"match_data_{season_id}_final"
 
-                # Fetch data for the selected table with SUM and AVG calculations
-                cursor.execute(f""" 
+                # Build the query
+                query = f"""
                     SELECT 
                         team_name,
                         count(points) AS games_played,
@@ -61,10 +63,20 @@ def league_data_view(request):
                         ROUND(CAST(AVG(possession_for) AS NUMERIC), 2) AS avg_possession_for,
                         ROUND(CAST(AVG(possession_against) AS NUMERIC), 2) AS avg_possession_against
                     FROM {table_name}
-                    GROUP BY team_name
-                    ORDER BY total_points DESC;
+                """
 
-                """)
+                # Add WHERE clause for home_or_away if selected
+                if selected_home_or_away:
+                    query += " WHERE homeoraway = %s"
+                    params = [selected_home_or_away]
+                else:
+                    params = []
+
+                # Complete the query
+                query += " GROUP BY team_name ORDER BY total_points DESC;"
+
+                # Execute the query
+                cursor.execute(query, params)
                 league_data = cursor.fetchall()
                 columns = [col[0] for col in cursor.description]
 
@@ -75,8 +87,11 @@ def league_data_view(request):
         'seasons': seasons,
         'selected_league': selected_league,
         'selected_season': selected_season,
+        'selected_home_or_away': selected_home_or_away,
     }
     return render(request, 'football_data/league_data.html', context)
+
+
 
 
 def match_details(request, team_name, league, season):
@@ -145,13 +160,6 @@ def match_details(request, team_name, league, season):
     return render(request, 'football_data/match_details.html', context)
 
 
-
-
-import requests
-from datetime import datetime, timedelta
-from django.db import connection
-from django.shortcuts import render
-
 def upcoming_games(request):
     games = []
     error_message = None
@@ -170,7 +178,7 @@ def upcoming_games(request):
             return render(request, "football_data/upcoming_games.html", {"games": games, "error_message": error_message})
 
         # Your API key (replace with your actual key)
-        api_key = "__________"
+        api_key = "928d7e45d921850a05f77b1f6e3fb7b137bd6184c447a44c9d9f6f0cab380ff9"
         base_url = "https://api.football-data-api.com/todays-matches"
 
         # Iterate through each date in the range
