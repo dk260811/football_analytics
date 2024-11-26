@@ -178,7 +178,7 @@ def upcoming_games(request):
             return render(request, "football_data/upcoming_games.html", {"games": games, "error_message": error_message})
 
         # Your API key (replace with your actual key)
-        api_key = "928d7e45d921850a05f77b1f6e3fb7b137bd6184c447a44c9d9f6f0cab380ff9"
+        api_key = "______________"
         base_url = "https://api.football-data-api.com/todays-matches"
 
         # Iterate through each date in the range
