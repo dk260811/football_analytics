@@ -5,6 +5,9 @@ from datetime import datetime, timedelta
 
 
 def league_data_view(request):
+
+    
+
     # Fetch leagues and seasons for the filters
     with connection.cursor() as cursor:
         cursor.execute("""
@@ -22,6 +25,10 @@ def league_data_view(request):
     selected_home_or_away = request.GET.get('home_or_away')
     league_data = []
     columns = []
+
+    if selected_season and '/' in selected_season:
+        selected_season = selected_season.replace('/', '')
+
 
     if selected_league and selected_season:
         # Fetch the season_id for the selected league and season
@@ -160,6 +167,7 @@ def match_details(request, team_name, league, season):
     return render(request, 'football_data/match_details.html', context)
 
 
+
 def upcoming_games(request):
     games = []
     error_message = None
@@ -177,209 +185,138 @@ def upcoming_games(request):
             error_message = "Invalid date format. Please enter dates in YYYY-MM-DD format."
             return render(request, "football_data/upcoming_games.html", {"games": games, "error_message": error_message})
 
-        # Your API key (replace with your actual key)
-        api_key = "______________"
+        # API Key and Base URL
+        api_key = "928d7e45d921850a05f77b1f6e3fb7b137bd6184c447a44c9d9f6f0cab380ff9"
         base_url = "https://api.football-data-api.com/todays-matches"
 
-        # Iterate through each date in the range
-        current_date = start_date
-        while current_date <= end_date:
-            params = {
-                "key": api_key,
-                "date": current_date.strftime('%Y-%m-%d')
-            }
+        # Generate the date range
+        date_range = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
 
-            try:
-                # Fetch matches for the current date
+        # Store all fetched games temporarily
+        games_data = []
+
+        try:
+            # Fetch matches for all dates
+            for date in date_range:
+                params = {
+                    "key": api_key,
+                    "date": date.strftime('%Y-%m-%d'),
+                }
                 response = requests.get(base_url, params=params)
                 if response.status_code == 200:
                     data = response.json()
                     if data.get("success"):
                         for game in data["data"]:
-                            competition_id = game["competition_id"]
-                            table_name = f"match_data_{competition_id}_final"
-                            home_id = game["homeID"]
-                            away_id = game["awayID"]
-
-                            # Default values for averages, team names, and metrics
-                            home_corners_avg = away_corners_avg = corners_diff = "NA"
-                            home_shots = away_shots = shots_diff = "NA"
-                            home_shots_on_target = away_shots_on_target = shots_on_target_diff = "NA"
-                            home_yellow_cards = away_yellow_cards = yellow_cards_diff = "NA"
-                            home_team_name = away_team_name = league_name = "NA"
-
-                            try:
-                                with connection.cursor() as cursor:
-                                    # Get League Name
-                                    cursor.execute(f"""
-                                        SELECT name
-                                        FROM possible_leagues_and_seasons
-                                        WHERE season_id = {competition_id}
-                                    """)
-                                    league_result = cursor.fetchone()
-                                    league_name = league_result[0] if league_result else "NA"
-
-                                    # Get Home Team Name
-                                    cursor.execute(f"""
-                                        SELECT team_name
-                                        FROM {table_name}
-                                        WHERE teamid = {home_id}
-                                    """)
-                                    home_team_result = cursor.fetchone()
-                                    home_team_name = home_team_result[0] if home_team_result else "NA"
-
-                                    # Get Away Team Name
-                                    cursor.execute(f"""
-                                        SELECT team_name
-                                        FROM {table_name}
-                                        WHERE teamid = {away_id}
-                                    """)
-                                    away_team_result = cursor.fetchone()
-                                    away_team_name = away_team_result[0] if away_team_result else "NA"
-
-                                    # Get Home Corners Average
-                                    cursor.execute(f"""
-                                        SELECT AVG(corners_for)
-                                        FROM {table_name}
-                                        WHERE teamid = {home_id}
-                                    """)
-                                    home_corners_result = cursor.fetchone()
-                                    home_corners_avg = round(home_corners_result[0], 2) if home_corners_result and home_corners_result[0] is not None else "NA"
-
-                                    # Get Away Corners Average
-                                    cursor.execute(f"""
-                                        SELECT AVG(corners_for)
-                                        FROM {table_name}
-                                        WHERE teamid = {away_id}
-                                    """)
-                                    away_corners_result = cursor.fetchone()
-                                    away_corners_avg = round(away_corners_result[0], 2) if away_corners_result and away_corners_result[0] is not None else "NA"
-
-                                    # Calculate Corners Difference
-                                    if home_corners_avg != "NA" and away_corners_avg != "NA":
-                                        try:
-                                            corners_diff = abs(float(home_corners_avg) - float(away_corners_avg))
-                                        except ValueError:
-                                            corners_diff = "NA"
-
-                                    try:
-                                        corners_diff = round(float(corners_diff), 2)
-                                    except (ValueError, TypeError):
-                                        corners_diff = "NA"  # Or any default value you prefer
-
-                                    # Get Home Shots
-                                    cursor.execute(f"""
-                                        SELECT AVG(shots_for)
-                                        FROM {table_name}
-                                        WHERE teamid = {home_id}
-                                    """)
-                                    home_shots_result = cursor.fetchone()
-                                    home_shots = round(home_shots_result[0], 2) if home_shots_result and home_shots_result[0] is not None else "NA"
-
-                                    # Get Away Shots
-                                    cursor.execute(f"""
-                                        SELECT AVG(shots_for)
-                                        FROM {table_name}
-                                        WHERE teamid = {away_id}
-                                    """)
-                                    away_shots_result = cursor.fetchone()
-                                    away_shots = round(away_shots_result[0], 2) if away_shots_result and away_shots_result[0] is not None else "NA"
-
-                                    # Calculate Shots Difference
-                                    if home_shots != "NA" and away_shots != "NA":
-                                        try:
-                                            shots_diff = abs(float(home_shots) - float(away_shots))
-                                        except ValueError:
-                                            shots_diff = "NA"
-
-                                    # Get Home Shots on Target
-                                    cursor.execute(f"""
-                                        SELECT AVG(shotsontarget_for)
-                                        FROM {table_name}
-                                        WHERE teamid = {home_id}
-                                    """)
-                                    home_shots_on_target_result = cursor.fetchone()
-                                    home_shots_on_target = round(home_shots_on_target_result[0], 2) if home_shots_on_target_result and home_shots_on_target_result[0] is not None else "NA"
-
-                                    # Get Away Shots on Target
-                                    cursor.execute(f"""
-                                        SELECT AVG(shotsontarget_for)
-                                        FROM {table_name}
-                                        WHERE teamid = {away_id}
-                                    """)
-                                    away_shots_on_target_result = cursor.fetchone()
-                                    away_shots_on_target = round(away_shots_on_target_result[0], 2) if away_shots_on_target_result and away_shots_on_target_result[0] is not None else "NA"
-
-                                    # Calculate Shots on Target Difference
-                                    if home_shots_on_target != "NA" and away_shots_on_target != "NA":
-                                        try:
-                                            shots_on_target_diff = abs(float(home_shots_on_target) - float(away_shots_on_target))
-                                        except ValueError:
-                                            shots_on_target_diff = "NA"
-
-                                    # Get Home Yellow Cards
-                                    cursor.execute(f"""
-                                        SELECT AVG(yellow_cards_for)
-                                        FROM {table_name}
-                                        WHERE teamid = {home_id}
-                                    """)
-                                    home_yellow_cards_result = cursor.fetchone()
-                                    home_yellow_cards = round(home_yellow_cards_result[0], 2) if home_yellow_cards_result and home_yellow_cards_result[0] is not None else "NA"
-
-                                    # Get Away Yellow Cards
-                                    cursor.execute(f"""
-                                        SELECT AVG(yellow_cards_for)
-                                        FROM {table_name}
-                                        WHERE teamid = {away_id}
-                                    """)
-                                    away_yellow_cards_result = cursor.fetchone()
-                                    away_yellow_cards = round(away_yellow_cards_result[0], 2) if away_yellow_cards_result and away_yellow_cards_result[0] is not None else "NA"
-
-                                    # Calculate Yellow Cards Difference
-                                    if home_yellow_cards != "NA" and away_yellow_cards != "NA":
-                                        try:
-                                            yellow_cards_diff = abs(float(home_yellow_cards) - float(away_yellow_cards))
-                                        except ValueError:
-                                            yellow_cards_diff = "NA"
-                            except Exception as e:
-                                pass
-
-                            # Add the game data to the games list
-                            games.append({
-                                "date": current_date.strftime('%Y-%m-%d'),
-                                "season": game["season"],
-                                "status": game["status"],
-                                "roundID": game["roundID"],
-                                "game_week": game["game_week"],
-                                "league": league_name,
-                                "home_team_name": home_team_name,
-                                "away_team_name": away_team_name,
-                                "home_corners_avg": home_corners_avg,
-                                "away_corners_avg": away_corners_avg,
-                                "corners_diff": corners_diff,
-                                "home_shots": home_shots,
-                                "away_shots": away_shots,
-                                "shots_diff": shots_diff,
-                                "home_shots_on_target": home_shots_on_target,
-                                "away_shots_on_target": away_shots_on_target,
-                                "shots_on_target_diff": shots_on_target_diff,
-                                "home_yellow_cards": home_yellow_cards,
-                                "away_yellow_cards": away_yellow_cards,
-                                "yellow_cards_diff": yellow_cards_diff,
-                            })
-                    else:
-                        print(f"No matches found on {current_date.strftime('%Y-%m-%d')}")
+                            game["date"] = date.strftime('%Y-%m-%d')  # Add the date to the game
+                            games_data.append(game)
                 else:
-                    print(f"Error fetching matches on {current_date.strftime('%Y-%m-%d')}: {response.status_code}")
-            except Exception as e:
-                error_message = f"An error occurred: {e}"
-                break
+                    print(f"API error for {date.strftime('%Y-%m-%d')}: {response.status_code}")
+        except Exception as e:
+            error_message = f"Error fetching data from API: {e}"
+            return render(request, "football_data/upcoming_games.html", {"games": games, "error_message": error_message})
 
-            current_date += timedelta(days=1)
+        # Extract unique competition IDs and team IDs
+        competition_ids = {game["competition_id"] for game in games_data}
+        team_ids = {game["homeID"] for game in games_data}.union({game["awayID"] for game in games_data})
 
-    return render(
-        request,
-        "football_data/upcoming_games.html",
-        {"games": games, "error_message": error_message},
-    )
+        # Bulk query for league names and team metrics
+        league_names = {}
+        team_metrics_by_competition = {}
+        team_names_by_competition = {}
+
+        try:
+            with connection.cursor() as cursor:
+                # Fetch league names
+                cursor.execute("""
+                    SELECT season_id, name
+                    FROM possible_leagues_and_seasons
+                    WHERE season_id IN %s
+                """, [tuple(competition_ids)])
+                league_names = dict(cursor.fetchall())
+
+                # Fetch team names and metrics, isolating by competition
+                for competition_id in competition_ids:
+                    # Team Names
+                    cursor.execute(f"""
+                        SELECT teamid, team_name
+                        FROM match_data_{competition_id}_final
+                        WHERE teamid IN %s
+                    """, [tuple(team_ids)])
+                    team_names_by_competition[competition_id] = {row[0]: row[1] for row in cursor.fetchall()}
+
+                    # Team Metrics
+                    cursor.execute(f"""
+                        SELECT teamid, 
+                               AVG(corners_for) AS corners_avg, 
+                               AVG(shots_for) AS shots_avg, 
+                               AVG(shotsontarget_for) AS shots_on_target_avg,
+                               AVG(yellow_cards_for) AS yellow_cards_avg
+                        FROM match_data_{competition_id}_final
+                        WHERE teamid IN %s
+                        GROUP BY teamid
+                    """, [tuple(team_ids)])
+                    team_metrics_by_competition[competition_id] = {row[0]: row[1:] for row in cursor.fetchall()}
+        except Exception as e:
+            error_message = f"Database error: {e}"
+            return render(request, "football_data/upcoming_games.html", {"games": games, "error_message": error_message})
+
+        # Process games data
+        for game in games_data:
+            competition_id = game["competition_id"]
+            home_id = game["homeID"]
+            away_id = game["awayID"]
+
+            # Get league name
+            league_name = league_names.get(competition_id, "NA")
+
+            # Get team names
+            team_names = team_names_by_competition.get(competition_id, {})
+            home_team_name = team_names.get(home_id, "NA")
+            away_team_name = team_names.get(away_id, "NA")
+
+            # Get metrics
+            team_metrics = team_metrics_by_competition.get(competition_id, {})
+            home_metrics = team_metrics.get(home_id, ("NA", "NA", "NA", "NA"))
+            away_metrics = team_metrics.get(away_id, ("NA", "NA", "NA", "NA"))
+
+            # Calculate differences
+            def calculate_difference(metric1, metric2):
+                try:
+                    return round(abs(float(metric1) - float(metric2)), 2)
+                except (ValueError, TypeError):
+                    return "NA"
+
+            corners_diff = calculate_difference(home_metrics[0], away_metrics[0])
+            shots_diff = calculate_difference(home_metrics[1], away_metrics[1])
+            shots_on_target_diff = calculate_difference(home_metrics[2], away_metrics[2])
+            yellow_cards_diff = calculate_difference(home_metrics[3], away_metrics[3])
+
+            # Append game to the final list
+            games.append({
+                "date": game["date"],
+                "season": game.get("season", "NA"),
+                "status": game.get("status", "NA"),
+                "roundID": game.get("roundID", "NA"),
+                "game_week": game.get("game_week", "NA"),
+                "league": league_name,
+                "home_team_name": home_team_name,
+                "away_team_name": away_team_name,
+                "home_corners_avg": round(float(home_metrics[0]), 2) if home_metrics[0] != "NA" else "NA",
+                "away_corners_avg": round(float(away_metrics[0]), 2) if away_metrics[0] != "NA" else "NA",
+                "corners_diff": corners_diff,
+                "home_shots": round(float(home_metrics[1]), 2) if home_metrics[1] != "NA" else "NA",
+                "away_shots": round(float(away_metrics[1]), 2) if away_metrics[1] != "NA" else "NA",
+                "shots_diff": shots_diff,
+                "home_shots_on_target": round(float(home_metrics[2]), 2) if home_metrics[2] != "NA" else "NA",
+                "away_shots_on_target": round(float(away_metrics[2]), 2) if away_metrics[2] != "NA" else "NA",
+                "shots_on_target_diff": shots_on_target_diff,
+                "home_yellow_cards": round(float(home_metrics[3]), 2) if home_metrics[3] != "NA" else "NA",
+                "away_yellow_cards": round(float(away_metrics[3]), 2) if away_metrics[3] != "NA" else "NA",
+                "yellow_cards_diff": yellow_cards_diff,
+                "comp_id": competition_id
+            })
+
+    return render(request, "football_data/upcoming_games.html", {"games": games, "error_message": error_message})
+
+
 
