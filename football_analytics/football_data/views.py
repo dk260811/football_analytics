@@ -168,6 +168,8 @@ def match_details(request, team_name, league, season):
 
 
 
+
+
 def upcoming_games(request):
     games = []
     error_message = None
@@ -236,26 +238,30 @@ def upcoming_games(request):
 
                 # Fetch team names and metrics, isolating by competition
                 for competition_id in competition_ids:
-                    # Team Names
-                    cursor.execute(f"""
-                        SELECT teamid, team_name
-                        FROM match_data_{competition_id}_final
-                        WHERE teamid IN %s
-                    """, [tuple(team_ids)])
-                    team_names_by_competition[competition_id] = {row[0]: row[1] for row in cursor.fetchall()}
+                    try:
+                        # Team Names
+                        cursor.execute(f"""
+                            SELECT teamid, team_name
+                            FROM match_data_{competition_id}_final
+                            WHERE teamid IN %s
+                        """, [tuple(team_ids)])
+                        team_names_by_competition[competition_id] = {row[0]: row[1] for row in cursor.fetchall()}
 
-                    # Team Metrics
-                    cursor.execute(f"""
-                        SELECT teamid, 
-                               AVG(corners_for) AS corners_avg, 
-                               AVG(shots_for) AS shots_avg, 
-                               AVG(shotsontarget_for) AS shots_on_target_avg,
-                               AVG(yellow_cards_for) AS yellow_cards_avg
-                        FROM match_data_{competition_id}_final
-                        WHERE teamid IN %s
-                        GROUP BY teamid
-                    """, [tuple(team_ids)])
-                    team_metrics_by_competition[competition_id] = {row[0]: row[1:] for row in cursor.fetchall()}
+                        # Team Metrics
+                        cursor.execute(f"""
+                            SELECT teamid, 
+                                   AVG(corners_for) AS corners_avg, 
+                                   AVG(shots_for) AS shots_avg, 
+                                   AVG(shotsontarget_for) AS shots_on_target_avg,
+                                   AVG(yellow_cards_for) AS yellow_cards_avg
+                            FROM match_data_{competition_id}_final
+                            WHERE teamid IN %s
+                            GROUP BY teamid
+                        """, [tuple(team_ids)])
+                        team_metrics_by_competition[competition_id] = {row[0]: row[1:] for row in cursor.fetchall()}
+                    except Exception as e:
+                        print(f"Skipping table for competition ID {competition_id}: {e}")
+                        continue
         except Exception as e:
             error_message = f"Database error: {e}"
             return render(request, "football_data/upcoming_games.html", {"games": games, "error_message": error_message})
@@ -317,6 +323,4 @@ def upcoming_games(request):
             })
 
     return render(request, "football_data/upcoming_games.html", {"games": games, "error_message": error_message})
-
-
 

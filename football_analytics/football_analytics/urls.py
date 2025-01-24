@@ -42,11 +42,8 @@ urlpatterns = [
 # git push
 
 # me shkru dikun cka kom bo n projekt deri qetash
-# mi marr krejt ligat sezonat qe i kom available n heroku
-# me qit filtera per me dal veq home away
 # mi marr local krejt t dhanat qe mvyne per regressione niher veq qeto t thjeshtat mandej edhe ato t komplikumet
 # mi marr krejt tabelat local mi pas per cdo rast
-# me shpejtu pak qit procesin e fetch games se shume gat po zgat mi fetch games
 # mi bo krejt regresionet diqysh online qe me mujt me dizajnu qe njerzt me perdor per qata
 # me implementu sene tjera si psh comb calc
 # me implementu me update data veq per qit sezon
