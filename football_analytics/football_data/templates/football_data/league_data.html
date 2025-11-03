@@ -5,145 +5,364 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>League Data</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Enable horizontal scrolling */
-        .table-wrapper {
-            overflow-x: auto;
-            position: relative;
+        body {
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+            color: #f5f6fa;
+            font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+            min-height: 100vh;
         }
-
-        /* Freeze the first column */
-        .table th:first-child,
-        .table td:first-child {
+        .main-card {
+            background: rgba(34, 49, 63, 0.95);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            padding: 2.5rem 2rem 2rem 2rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-label {
+            color: #3a7ca5;
+            font-weight: 600;
+        }
+        .form-select, .form-control {
+            background: #232526;
+            color: #f5f6fa;
+            border: 1px solid #3a7ca5;
+            border-radius: 8px;
+        }
+        .form-select:focus, .form-control:focus {
+            border-color: #3a7ca5;
+            box-shadow: 0 0 0 0.2rem rgba(58,124,165,0.25);
+        }
+        .btn-primary, .btn-success, .btn-secondary {
+            border-radius: 8px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-primary, .btn-success {
+            background: #3a7ca5;
+            border: none;
+        }
+        .btn-primary:hover, .btn-success:hover {
+            background: #28587b;
+        }
+        .btn-secondary {
+            background: #232526;
+            color: #3a7ca5;
+            border: 1px solid #3a7ca5;
+        }
+        .btn-secondary:hover {
+            background: #3a7ca5;
+            color: #232526;
+        }
+        .football-icon {
+            color: #3a7ca5;
+            font-size: 2.5rem;
+            margin-right: 0.7rem;
+            vertical-align: middle;
+        }
+        h1, h3 {
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .table-wrapper {
+            overflow: auto;
+            position: relative;
+            background: rgba(44, 62, 80, 0.95);
+            border-radius: 16px;
+            padding: 1.5rem 1rem;
+            margin-top: 2rem;
+            box-shadow: 0 4px 24px 0 rgba(0,0,0,0.15);
+        }
+        .table th, .table td {
+            color: #f5f6fa;
+            background: transparent;
+            /* Basic width and wrapping for all cells */
+            /* Adjust width as needed, or make it min-width */
+            /* width: 150px;  */ 
+            /* white-space: nowrap; */ /* Initially, let content determine width, wrap if too long */
+        }
+        .table td { /* Target data cells specifically */
+            color: #fff !important; /* Ensure all text in td is white */
+        }
+        /* Ensure links within table data cells are white and styled */
+        .table td a {
+            color: #fff !important;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .table td a:hover {
+            color: #ddd !important; /* Optional: slightly different color on hover */
+            text-decoration: underline;
+        }
+        .table th {
+            background: #3a7ca5; /* Ensure header has solid background */
+            color: #fff;
+            font-weight: 700;
+            /* Sticky header row */
+            position: sticky;
+            top: 0;
+            z-index: 2; /* Above normal cells, below top-left sticky cell */
+        }
+        /* Sticky first column: first th and first td */
+        .table thead tr th:first-child,
+        .table tbody tr td:first-child {
             position: sticky;
             left: 0;
-            background-color: #fff; /* Set background color */
-            z-index: 2; /* Ensure the first column stays above other content */
+            z-index: 1; /* Above normal cells if they were to overlap, but below header */
+            background: #34495e; /* Match a suitable dark background from your theme, ensure it's not transparent */
+             /* If using striped rows, this background might need to be consistent for all sticky cells */
         }
-
-        /* Add extra z-index for the header */
-        .table th:first-child {
-            z-index: 3;
+        /* Specifically style the first TD to ensure its background for stickiness */
+        .table tbody tr td:first-child {
+            background: #2c3e50; /* A slightly different shade or same as general sticky for consistency */
+            color: #fff !important; /* Ensure text remains white */
         }
-
-        /* Cursor pointer for sortable columns */
+         .table tbody tr:nth-of-type(odd) td:first-child {
+            background: #2c3e50; /* Ensure odd row sticky cells also have a solid background */
+        }
+        .table tbody tr:nth-of-type(even) td:first-child {
+            background: #283747; /* Slightly different if you want to maintain a subtle striping on the sticky column */
+        }
+        /* Top-left sticky cell (team_name header) */
+        .table thead tr th:first-child {
+            left: 0;
+            z-index: 3 !important; /* Highest z-index to stay on top */
+            background: #3a7ca5 !important; /* Match header background */
+        }
+        .table-striped > tbody > tr:nth-of-type(odd) > * {
+            background: rgba(58,124,165,0.08);
+        }
         .sortable {
             cursor: pointer;
         }
-
-        /* Duplicate scroller container */
         .scroller-container {
             overflow-x: auto;
             white-space: nowrap;
             position: sticky;
             top: 0;
-            background: #fff;
+            background: #232526;
             z-index: 10;
         }
-
         .scroller-container::-webkit-scrollbar {
             height: 10px;
         }
-
         .scroller-container::-webkit-scrollbar-thumb {
-            background-color: #ccc;
+            background-color: #3a7ca5;
             border-radius: 5px;
         }
-
         .scroller-container::-webkit-scrollbar-track {
-            background-color: #f1f1f1;
+            background-color: #232526;
+        }
+        @media (max-width: 768px) {
+            .main-card, .table-wrapper {
+                padding: 1rem;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
-<body class="container">
-    <h1 class="mt-5">League Data</h1>
-
-    <!-- Filter Form -->
-    <form method="get" class="row g-3 mt-3">
-        <div class="col-md-6">
-            <label for="league" class="form-label">League</label>
-            <select id="league" name="league" class="form-select">
-                <option value="">Select League</option>
-                {% for league in leagues %}
-                    <option value="{{ league }}" {% if league == selected_league %}selected{% endif %}>{{ league }}</option>
-                {% endfor %}
-            </select>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'index' %}"><i class="fas fa-futbol"></i> Data Hub</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'football_data' %}active{% endif %}" href="{% url 'football_data' %}">League Data</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'visualisation' %}active{% endif %}" href="{% url 'visualisation' %}">Team Visualisations</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'league_visualisation' %}active{% endif %}" href="{% url 'league_visualisation' %}">League Visualisations</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'upcoming_games' %}active{% endif %}" href="{% url 'upcoming_games' %}">Upcoming Games</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'correlations' %}active{% endif %}" href="{% url 'correlations' %}">Correlations</a>
+                    </li>
+                </ul>
+            </div>
+            <span class="navbar-text">
+                Bringing you the latest football data
+            </span>
         </div>
-        <div class="col-md-6">
-            <label for="season" class="form-label">Season</label>
-            <select id="season" name="season" class="form-select">
-                <option value="">Select Season</option>
-                {% for season in seasons %}
-                    <option value="{{ season }}" {% if season == selected_season %}selected{% endif %}>{{ season }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">Filter</button>
-        </div>
-    </form>
+    </nav>
 
-    <!-- Buttons for Home/Away/All -->
-    {% if selected_league and selected_season %}
-    <div class="mt-4">
-        <h3>Filter Games</h3>
-        <div class="btn-group" role="group" aria-label="Home/Away/All Filters">
-            <a href="?league={{ selected_league }}&season={{ selected_season }}&home_or_away=Homegame" 
-               class="btn btn-outline-primary {% if selected_home_or_away == 'Home' %}active{% endif %}">
-                Home
-            </a>
-            <a href="?league={{ selected_league }}&season={{ selected_season }}&home_or_away=Awaygame" 
-               class="btn btn-outline-primary {% if selected_home_or_away == 'Away' %}active{% endif %}">
-                Away
-            </a>
-            <a href="?league={{ selected_league }}&season={{ selected_season }}" 
-               class="btn btn-outline-primary {% if not selected_home_or_away %}active{% endif %}">
-                All
-            </a>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Duplicate Scroller -->
-    <div class="scroller-container">
-        <div style="width: max-content;"></div>
-    </div>
-
-    <!-- Data Table -->
-    <div class="table-wrapper mt-4">
-        <table class="table table-striped" id="leagueTable">
-            <thead>
-                <tr>
-                    {% for col in columns %}
-                        <th class="{% if forloop.counter0 > 0 %}sortable{% endif %}" 
-                            {% if forloop.counter0 > 0 %}onclick="sortTable({{ forloop.counter0 }})"{% endif %}>
-                            {{ col }} {% if forloop.counter0 > 0 %}&#x25B2;&#x25BC;{% endif %}
-                        </th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in league_data %}
-                    <tr>
-                        {% for cell in row %}
-                            <td>
-                                {% if forloop.counter0 == 0 %} <!-- Check if this is the first column (team_name) -->
-                                    <a href="{% url 'match_details' team_name=cell league=selected_league season=selected_season %}">{{ cell }}</a>
-                                {% else %}
-                                    {{ cell }}
-                                {% endif %}
-                            </td>
+    <div class="container">
+        <div class="main-card">
+            <div class="d-flex align-items-center mb-4">
+                <i class="fas fa-futbol football-icon"></i>
+                <h1 class="mb-0">League Data</h1>
+            </div>
+            <!-- Filter Form -->
+            <form method="get" class="row g-3 mt-3" id="filterForm">
+                <div class="col-md-5">
+                    <label for="league" class="form-label">League</label>
+                    <select id="league" name="league" class="form-select">
+                        <option value="">Select League</option>
+                        {% for league_name in leagues %}
+                            <option value="{{ league_name }}" {% if league_name == selected_league %}selected{% endif %}>{{ league_name }}</option>
                         {% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label for="season" class="form-label">Season</label>
+                    <select id="season" name="season" class="form-select">
+                        <option value="">Select Season</option>
+                        {% for season_year in seasons %}
+                            <option value="{{ season_year }}" {% if season_year == selected_season %}selected{% endif %}>{{ season_year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <input type="hidden" name="view_type" id="viewTypeInput" value="{{ view_type|default:'averages' }}">
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+
+            <!-- View Type Toggle Buttons (conditional display) -->
+            {% if selected_league and selected_season %}
+            <div class="mt-3 mb-3">
+                <div class="btn-group" role="group" aria-label="View type toggle">
+                    <button type="button" class="btn btn-info view-type-btn {% if view_type == 'averages' %}active{% endif %}" data-viewtype="averages">Show Averages</button>
+                    <button type="button" class="btn btn-info view-type-btn {% if view_type == 'totals' %}active{% endif %}" data-viewtype="totals">Show Totals</button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Buttons for Home/Away/All -->
+            {% if selected_league and selected_season %}
+            <div class="mt-4">
+                <h3>Filter Games</h3>
+                <div class="btn-group" role="group" aria-label="Home/Away/All Filters">
+                    <a href="?league={{ selected_league }}&season={{ selected_season }}&home_or_away=Homegame&view_type={{ view_type|default:'averages' }}" 
+                       class="btn btn-secondary {% if selected_home_or_away == 'Homegame' %}active{% endif %}">
+                        Home
+                    </a>
+                    <a href="?league={{ selected_league }}&season={{ selected_season }}&home_or_away=Awaygame&view_type={{ view_type|default:'averages' }}" 
+                       class="btn btn-secondary {% if selected_home_or_away == 'Awaygame' %}active{% endif %}">
+                        Away
+                    </a>
+                    <a href="?league={{ selected_league }}&season={{ selected_season }}&view_type={{ view_type|default:'averages' }}" 
+                       class="btn btn-secondary {% if not selected_home_or_away %}active{% endif %}">
+                        All
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            <!-- Duplicate Scroller -->
+            <div class="scroller-container">
+                <div style="width: max-content;"></div>
+            </div>
+            <!-- Data Table -->
+            <div class="table-wrapper mt-4">
+                <table class="table table-striped" id="leagueTable">
+                    <thead>
+                        <tr>
+                            {% for col in columns %}
+                                <th class="{% if forloop.counter0 > 0 %}sortable{% endif %}" 
+                                    {% if forloop.counter0 > 0 %}onclick="sortTable({{ forloop.counter0 }})"{% endif %}>
+                                    {{ col }} {% if forloop.counter0 > 0 %}&#x25B2;&#x25BC;{% endif %}
+                                </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in league_data %}
+                            <tr>
+                                {% for cell in row %}
+                                    <td>
+                                        {% if forloop.counter0 == 0 %} <!-- Check if this is the first column (team_name) -->
+                                            <a href="{% url 'match_details' team_name=cell league=selected_league season=selected_season %}">{{ cell }}</a>
+                                        {% else %}
+                                            {{ cell }}
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex gap-3 mt-4">
+                <!-- Removed old buttons, nav is at top -->
+            </div>
+        </div>
     </div>
-
-    <a href="{% url 'upcoming_games' %}" class="btn btn-primary mt-3">Upcoming Games</a>
-
     <!-- JavaScript for Sorting -->
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const leagueSelect = document.getElementById('league');
+            const seasonSelect = document.getElementById('season');
+            const getSeasonsUrl = "{% url 'get_seasons_for_league' %}";
+            const filterForm = document.getElementById('filterForm');
+            const viewTypeInput = document.getElementById('viewTypeInput');
+            const viewTypeButtons = document.querySelectorAll('.view-type-btn');
+
+            // Initial state for season dropdown
+            if (!leagueSelect.value || seasonSelect.options.length <= 1) {
+                seasonSelect.disabled = true;
+            }
+
+            leagueSelect.addEventListener('change', function() {
+                const selectedLeagueValue = this.value;
+                seasonSelect.innerHTML = '<option value="">Loading seasons...</option>'; 
+                seasonSelect.disabled = true;
+                if (selectedLeagueValue) {
+                    fetch(`${getSeasonsUrl}?league=${selectedLeagueValue}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(errData => { throw new Error(errData.error || `Server error: ${response.status}`); })
+                                                 .catch(() => { throw new Error(`Server error: ${response.status}`); });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            seasonSelect.innerHTML = '<option value="">Select Season</option>'; 
+                            if (data.error) {
+                                seasonSelect.innerHTML = `<option value="">Error: ${data.error}</option>`;
+                                seasonSelect.disabled = true;
+                            } else if (data.seasons && data.seasons.length > 0) {
+                                data.seasons.forEach(function(s) { seasonSelect.add(new Option(s, s)); });
+                                seasonSelect.disabled = false;
+                            } else {
+                                seasonSelect.innerHTML = '<option value="">No seasons available</option>';
+                                seasonSelect.disabled = true; 
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching seasons:', error);
+                            seasonSelect.innerHTML = `<option value="">${error.message || 'Error loading seasons'}</option>`;
+                            seasonSelect.disabled = true;
+                        });
+                } else {
+                    seasonSelect.innerHTML = '<option value="">Select Season</option>';
+                    seasonSelect.disabled = true;
+                }
+            });
+
+            viewTypeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const selectedViewType = this.dataset.viewtype;
+                    viewTypeInput.value = selectedViewType;
+                    filterForm.submit(); // Resubmit the form with the new view_type
+                });
+            });
+        });
+
         function sortTable(columnIndex) {
             const table = document.getElementById("leagueTable");
             const tbody = table.querySelector("tbody");

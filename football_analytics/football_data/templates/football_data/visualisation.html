@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Visualisations</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+            color: #f5f6fa;
+            font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+            min-height: 100vh;
+        }
+        .main-card {
+            background: rgba(34, 49, 63, 0.95);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            padding: 2.5rem 2rem 2rem 2rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-label {
+            color: #3a7ca5;
+            font-weight: 600;
+        }
+        .form-select, .form-control {
+            background: #232526;
+            color: #f5f6fa;
+            border: 1px solid #3a7ca5;
+            border-radius: 8px;
+        }
+        .form-select:focus, .form-control:focus {
+            border-color: #3a7ca5;
+            box-shadow: 0 0 0 0.2rem rgba(58,124,165,0.25);
+        }
+        .btn-primary, .btn-success, .btn-secondary {
+            border-radius: 8px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-primary {
+            background: #3a7ca5;
+            border: none;
+        }
+        .btn-primary:hover {
+            background: #28587b;
+        }
+        .btn-secondary {
+            background: #232526;
+            color: #3a7ca5;
+            border: 1px solid #3a7ca5;
+        }
+        .btn-secondary:hover {
+            background: #3a7ca5;
+            color: #232526;
+        }
+        .football-icon {
+            color: #3a7ca5;
+            font-size: 2.5rem;
+            margin-right: 0.7rem;
+            vertical-align: middle;
+        }
+        h1, h3 {
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .chart-card {
+            background: rgba(44, 62, 80, 0.95);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            box-shadow: 0 4px 24px 0 rgba(0,0,0,0.15);
+            position: relative;
+        }
+        .chart-card canvas {
+            height: 300px !important;
+            max-height: 300px;
+            width: 100% !important;
+        }
+        @media (max-width: 768px) {
+            .main-card, .chart-card {
+                padding: 1rem;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+            .chart-card canvas {
+                height: 250px !important;
+                max-height: 250px;
+            }
+        }
+        .comparison-selects-card {
+            background: rgba(34, 49, 63, 0.85);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .comparison-selects-card .form-label {
+            font-size: 0.9rem;
+        }
+        .descriptive-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .team-stats-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .team-stats-card h5 {
+            color: #3a7ca5;
+            margin-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'index' %}"><i class="fas fa-futbol"></i> Data Hub</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'football_data' %}active{% endif %}" href="{% url 'football_data' %}">League Data</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'visualisation' %}active{% endif %}" href="{% url 'visualisation' %}">Team Visualisations</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'league_visualisation' %}active{% endif %}" href="{% url 'league_visualisation' %}">League Visualisations</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'correlations' %}active{% endif %}" href="{% url 'correlations' %}">Correlations</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'upcoming_games' %}active{% endif %}" href="{% url 'upcoming_games' %}">Upcoming Games</a>
+                    </li>
+                </ul>
+            </div>
+            <span class="navbar-text">
+                Bringing you the latest football data
+            </span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="main-card">
+            <div class="d-flex align-items-center mb-4">
+                <i class="fas fa-futbol football-icon"></i>
+                <h1 class="mb-0">Team Visualisations</h1>
+            </div>
+            <form id="visualisation-form" class="row g-4 mb-3">
+                <div class="col-md-3">
+                    <label for="leagueSelect" class="form-label">League</label>
+                    <select id="leagueSelect" name="league" class="form-select">
+                        <option value="">Select League</option>
+                        {% for l_name in leagues %}
+                            <option value="{{ l_name }}" {% if l_name == selected_league %}selected{% endif %}>{{ l_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="seasonSelect" class="form-label">Year</label>
+                    <select id="seasonSelect" name="season" class="form-select" {% if not selected_league %}disabled{% endif %}>
+                        <option value="">Select Year</option>
+                        {% for s_name in seasons %}
+                            <option value="{{ s_name }}" {% if s_name == selected_season %}selected{% endif %}>{{ s_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="teamSelect" class="form-label">Primary Team</label>
+                    <select id="teamSelect" name="team" class="form-select" {% if not selected_season %}disabled{% endif %}>
+                        <option value="">Select Team</option>
+                        {# Options will be populated by JavaScript #}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="kpiSelect" class="form-label">KPI</label>
+                    <select id="kpiSelect" name="kpi" class="form-select" {% if not selected_season %}disabled{% endif %}>
+                        <option value="">Select KPI</option>
+                        {% for k_val, k_label in kpis %}
+                            <option value="{{ k_val }}" {% if k_val == request.GET.kpi %}selected{% endif %}>{{ k_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+
+            <div id="comparisonSelectsCard" class="comparison-selects-card" style="display:none;">
+                <h4 class="mb-3 text-light">Compare With Other Teams</h4>
+                <div class="row g-3">
+                    {% for i in "1234"|make_list %}
+                    <div class="col-md-3">
+                        <label for="compareTeam{{ i }}Select" class="form-label">Team {{ i }} vs:</label>
+                        <select id="compareTeam{{ i }}Select" name="compare_team{{ i }}" class="form-select compare-team-select" disabled>
+                            <option value="none">None</option>
+                        </select>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div id="analysisSection" class="mt-4" style="display:none;">
+                <h2 id="analysisKpiTitle" class="mb-3 text-center" style="color: #3a7ca5;"></h2>
+                
+                <div class="row g-4">
+                    <div class="col-md-12">
+                        <div class="chart-card p-3">
+                            <h4 class="mb-3"><i class="fas fa-calculator me-2"></i>Descriptive Statistics</h4>
+                            <div id="descriptiveStatsGrid" class="descriptive-stats-grid">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="chart-card">
+                            <h4 class="mb-3"><i class="fas fa-chart-line me-2"></i>Performance Over Time</h4>
+                            <canvas id="timeSeriesChart" width="800" height="300"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="chart-card">
+                            <h4 class="mb-3"><i class="fas fa-chart-bar me-2"></i>Distribution (Binned Histogram)</h4>
+                            <canvas id="binnedHistogramChart" width="800" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{ teams_for_js|json_script:"teams_data_for_js" }}
+
+    <script>
+        const mainForm = document.getElementById('visualisation-form');
+        const leagueSelect = document.getElementById('leagueSelect');
+        const seasonSelect = document.getElementById('seasonSelect');
+        const teamSelect = document.getElementById('teamSelect');
+        const kpiSelect = document.getElementById('kpiSelect');
+        
+        const comparisonSelectsCard = document.getElementById('comparisonSelectsCard');
+        const compareTeamSelects = [
+            document.getElementById('compareTeam1Select'),
+            document.getElementById('compareTeam2Select'),
+            document.getElementById('compareTeam3Select'),
+            document.getElementById('compareTeam4Select')
+        ];
+
+        const analysisSection = document.getElementById('analysisSection');
+        const analysisKpiTitle = document.getElementById('analysisKpiTitle');
+        const descriptiveStatsGrid = document.getElementById('descriptiveStatsGrid');
+
+        let timeSeriesChartInstance = null;
+        let binnedHistogramChartInstance = null;
+        let availableTeamsForComparison = [];
+
+        function populateTeamDropdowns(selectElement, teams, selectedValue, includeNoneOption = false, primaryTeamToExclude = null) {
+            console.log("populateTeamDropdowns called. 'teams' argument:", teams, "Type:", typeof teams, "IsArray:", Array.isArray(teams)); // DEBUG
+            selectElement.innerHTML = '';
+            if (includeNoneOption) {
+                const noneOpt = new Option('None', 'none');
+                selectElement.add(noneOpt);
+            }
+            if (!includeNoneOption && teams.length > 0) {
+                 const placeholder = new Option('Select Team', '');
+                 selectElement.add(placeholder);
+            }
+
+            teams.forEach(teamName => {
+                if (primaryTeamToExclude && teamName === primaryTeamToExclude) return;
+                const option = new Option(teamName, teamName);
+                if (teamName === selectedValue) {
+                    option.selected = true;
+                }
+                selectElement.add(option);
+            });
+        }
+
+        function updateComparisonDropdownsState() {
+            const primaryTeamSelected = teamSelect.value;
+            const kpiSelected = kpiSelect.value;
+            const canCompare = primaryTeamSelected && kpiSelected && availableTeamsForComparison.length > 0;
+            
+            comparisonSelectsCard.style.display = canCompare ? 'block' : 'none';
+            compareTeamSelects.forEach(compSelect => {
+                compSelect.disabled = !canCompare;
+                if (canCompare) {
+                    const currentCompValue = compSelect.value;
+                    populateTeamDropdowns(compSelect, availableTeamsForComparison, currentCompValue, true, primaryTeamSelected);
+                }
+            });
+        }
+        
+        function allPrimarySelectionsMade() {
+            return leagueSelect.value && seasonSelect.value && teamSelect.value && kpiSelect.value;
+        }
+
+        async function updateVisualisationAnalysis() {
+            if (!allPrimarySelectionsMade()) {
+                analysisSection.style.display = 'none';
+                if (timeSeriesChartInstance) timeSeriesChartInstance.destroy();
+                if (binnedHistogramChartInstance) binnedHistogramChartInstance.destroy();
+                return;
+            }
+
+            const baseUrl = "{% url 'visualisation_data' %}";
+            const params = new URLSearchParams({
+                league: leagueSelect.value,
+                season: seasonSelect.value,
+                kpi: kpiSelect.value,
+                team: teamSelect.value
+            });
+            compareTeamSelects.forEach((sel, index) => {
+                if (sel.value && sel.value !== 'none') {
+                    params.append(`compare_team${index + 1}`, sel.value);
+                }
+            });
+            const url = `${baseUrl}?${params.toString()}`;
+            console.log("Fetching data with URL:", url);
+
+            try {
+                const response = await fetch(url);
+                const result = await response.json();
+                console.log("DEBUG: Raw JSON response from server:", result);
+
+                if (result.error) {
+                    alert(`Error fetching data: ${result.error}`);
+                    analysisSection.style.display = 'none';
+                    return;
+                }
+
+                analysisSection.style.display = 'block';
+                analysisKpiTitle.textContent = `${result.kpi_display_name} Analysis - Primary: ${result.primary_team_name}`;
+                
+                descriptiveStatsGrid.innerHTML = '';
+                for (const [teamName, stats] of Object.entries(result.descriptive_stats)) {
+                    const statCard = document.createElement('div');
+                    statCard.classList.add('team-stats-card');
+                    
+                    // Format mode display - handle both single values and arrays
+                    let modeDisplay = stats.mode;
+                    if (Array.isArray(stats.mode)) {
+                        modeDisplay = stats.mode.join(', ');
+                    }
+                    
+                    statCard.innerHTML = `<h5>${teamName}</h5><p class="mb-1">Mean: ${stats.mean}</p><p class="mb-1">Median: ${stats.median}</p><p class="mb-0">Mode: ${modeDisplay}</p>`;
+                    descriptiveStatsGrid.appendChild(statCard);
+                }
+
+                if (timeSeriesChartInstance) timeSeriesChartInstance.destroy();
+                timeSeriesChartInstance = new Chart(document.getElementById('timeSeriesChart').getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: result.time_series_data.labels,
+                        datasets: result.time_series_data.datasets
+                    },
+                    options: commonChartOptions('Performance Over Time')
+                });
+
+                if (binnedHistogramChartInstance) binnedHistogramChartInstance.destroy();
+                binnedHistogramChartInstance = new Chart(document.getElementById('binnedHistogramChart').getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: result.histogram_data.labels,
+                        datasets: result.histogram_data.datasets
+                    },
+                    options: commonChartOptions('Distribution of ' + result.kpi_display_name, true)
+                });
+
+            } catch (error) {
+                console.error('Failed to update visualisation:', error);
+                alert('Failed to load visualisation data. Check console for details.');
+                analysisSection.style.display = 'none';
+            }
+        }
+        
+        function commonChartOptions(titleText, isGroupedBar = false) {
+            const options = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: titleText, color: '#f5f6fa', font: { size: 16, weight: 'bold' } },
+                    legend: { labels: { color: '#f5f6fa', font: { weight: 'bold' } } },
+                    tooltip: { backgroundColor: '#232526', titleColor: '#3a7ca5', bodyColor: '#f5f6fa', borderColor: '#3a7ca5', borderWidth: 1 }
+                },
+                scales: {
+                    x: { ticks: { color: '#f5f6fa', maxRotation: 45, minRotation: 45 }, grid: { color: 'rgba(245,246,250,0.1)' } },
+                    y: { beginAtZero: true, ticks: { color: '#f5f6fa' }, grid: { color: 'rgba(245,246,250,0.1)' } }
+                }
+            };
+            if (isGroupedBar) {
+                options.scales.x.ticks.autoSkip = false;
+            }
+            return options;
+        }
+
+        [leagueSelect, seasonSelect, teamSelect, kpiSelect].forEach(sel => {
+            sel.addEventListener('change', (event) => {
+                const targetId = event.target.id;
+                if (targetId === 'leagueSelect' || targetId === 'seasonSelect') {
+                    const params = new URLSearchParams();
+                    if (leagueSelect.value) params.set('league', leagueSelect.value);
+                    if (seasonSelect.value && (targetId === 'seasonSelect' || leagueSelect.value)) {
+                        params.set('season', seasonSelect.value);
+                    }
+                    if (teamSelect.value && targetId !== 'teamSelect') params.set('team', teamSelect.value);
+                    if (kpiSelect.value && targetId !== 'kpiSelect') params.set('kpi', kpiSelect.value);
+                    compareTeamSelects.forEach((cs, idx) => {
+                        if (cs.value && cs.value !== 'none') params.set(`compare_team${idx+1}`, cs.value);
+                    });
+                    window.location.search = params.toString();
+                    return;
+                }
+                if (targetId === 'teamSelect' || targetId === 'kpiSelect') {
+                    updateComparisonDropdownsState();
+                    updateVisualisationAnalysis();
+                }
+            });
+        });
+
+        compareTeamSelects.forEach(sel => {
+            sel.addEventListener('change', updateVisualisationAnalysis);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pLeague = urlParams.get('league');
+            const pSeason = urlParams.get('season');
+            const pTeam = urlParams.get('team');
+            const pKpi = urlParams.get('kpi');
+
+            // Parse teams_json using the json_script element
+            try {
+                const teamsDataElement = document.getElementById('teams_data_for_js');
+                if (teamsDataElement) {
+                    console.log("DEBUG: teamsDataElement.textContent:", teamsDataElement.textContent); // Log content BEFORE parse
+                    availableTeamsForComparison = JSON.parse(teamsDataElement.textContent);
+                } else {
+                    console.log("DEBUG: teams_data_for_js element NOT FOUND"); // Log if element missing
+                    availableTeamsForComparison = [];
+                }
+            } catch (e) {
+                console.error("Error parsing teams_json from json_script:", e);
+                availableTeamsForComparison = []; // Fallback to empty array
+            }
+            console.log("Available teams for comparison after parse:", availableTeamsForComparison); // DEBUG line
+
+            // Populate primary team select dropdown
+            populateTeamDropdowns(teamSelect, availableTeamsForComparison, pTeam, false);
+            if (pTeam && availableTeamsForComparison.includes(pTeam)) { // Ensure pTeam is valid before selecting
+                teamSelect.value = pTeam;
+            } else if (availableTeamsForComparison.length > 0 && !pTeam) {
+                // Optionally select the first team if no pTeam is specified and teams are available
+                // teamSelect.value = availableTeamsForComparison[0];
+            } else {
+                teamSelect.value = ''; // Explicitly set to placeholder if no valid pTeam
+            }
+
+            if (pKpi) kpiSelect.value = pKpi; // Pre-select KPI
+
+            // Pre-select comparison dropdowns
+            compareTeamSelects.forEach((compSel, index) => {
+                const compTeamParam = urlParams.get(`compare_team${index + 1}`);
+                populateTeamDropdowns(compSel, availableTeamsForComparison, compTeamParam || 'none', true, teamSelect.value);
+                if(compTeamParam && availableTeamsForComparison.includes(compTeamParam)) { // Ensure compTeamParam is valid
+                    compSel.value = compTeamParam;
+                } else {
+                    compSel.value = 'none'; // Default to none if param is invalid or not present
+                }
+            });
+
+            updateComparisonDropdownsState();
+
+            if (allPrimarySelectionsMade()) {
+                updateVisualisationAnalysis();
+            }
+            seasonSelect.disabled = !leagueSelect.value;
+            const seasonIsSelected = seasonSelect.value;
+            teamSelect.disabled = !seasonIsSelected || availableTeamsForComparison.length === 0; // Also disable if no teams
+            kpiSelect.disabled = !seasonIsSelected;
+        });
+
+    </script>
+</body>
+</html> 

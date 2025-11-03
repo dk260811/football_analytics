@@ -30,7 +30,7 @@ from football_data import views  # Import the view if you want to use it directl
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('football/', include('football_data.urls')),  # Keep your existing football path
-    path('', views.league_data_view, name='football_data'),  # Add this to make the root URL go to league_data
+    path('', views.index_view, name='index'),  # Change this to use index_view for the root URL
     
 ]
 

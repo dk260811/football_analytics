@@ -5,174 +5,290 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upcoming Games</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .table-container {
+        body {
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+            color: #f5f6fa;
+            font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+            min-height: 100vh;
+        }
+        .main-card {
+            background: rgba(34, 49, 63, 0.95);
+            border-radius: 18px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            padding: 2.5rem 2rem 2rem 2rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+        .btn-secondary {
+            background: #232526;
+            color: #3a7ca5;
+            border: 1px solid #3a7ca5;
+            border-radius: 8px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #3a7ca5;
+            color: #232526;
+        }
+        .btn-primary {
+            background: #3a7ca5;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-primary:hover {
+            background: #28587b;
+        }
+        .football-icon {
+            color: #3a7ca5;
+            font-size: 2.5rem;
+            margin-right: 0.7rem;
+            vertical-align: middle;
+        }
+        h1, h3 {
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .table-wrapper {
             overflow-x: auto;
-            max-height: 80vh;
+            position: relative;
+            background: rgba(44, 62, 80, 0.95);
+            border-radius: 16px;
+            padding: 1.5rem 1rem;
+            margin-top: 2rem;
+            box-shadow: 0 4px 24px 0 rgba(0,0,0,0.15);
         }
-
-        table {
+        .table {
+            table-layout: fixed;
+            width: max-content;
             border-collapse: collapse;
-            width: 100%;
-            table-layout: auto; /* Allow columns to adjust dynamically */
+            border-spacing: 0;
         }
-
-        th, td {
-            text-align: center;
-            padding: 5px; /* Reduced padding for tighter spacing */
-            white-space: nowrap; /* Prevent text wrapping */
+        .table th, .table td {
+            color: #fff !important;
+            border-right: 1px solid #28587b;
+            position: relative;
+            width: 150px;
+            max-width: 150px;
+            white-space: normal;
+            word-wrap: break-word;
+            padding: 12px 8px;
+            vertical-align: middle;
+            background-color: #3a7ca5 !important;
         }
-
-        /* Sticky Columns */
-        th.sticky,
-        td.sticky {
+        /* Make date column slightly smaller */
+        .table th:first-child, 
+        .table td:first-child {
+            width: 120px;
+            max-width: 120px;
+        }
+        .table th {
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            background-color: #28587b !important;
+        }
+        /* Remove alternating row colors */
+        .table tr:nth-child(even),
+        .table tr:nth-child(odd) {
+            background-color: #3a7ca5 !important;
+        }
+        /* Sticky columns styling */
+        .table th.sticky, .table td.sticky { 
             position: sticky;
             left: 0;
-            z-index: 1;
-            background-color: #f8f9fa;
-            border-right: 1px solid #dee2e6;
         }
-
-        th.sticky-2,
-        td.sticky-2 {
-            left: 100px;
+        .table th.sticky-2, .table td.sticky-2 { 
+            position: sticky;
+            left: 120px;
         }
-
-        th.sticky-3,
-        td.sticky-3 {
-            left: 300px;
+        .table th.sticky-3, .table td.sticky-3 { 
+            position: sticky;
+            left: 270px;
         }
-
-        th.sticky-4,
-        td.sticky-4 {
-            left: 600px;
+        .table th.sticky-4, .table td.sticky-4 { 
+            position: sticky;
+            left: 420px;
         }
-
-        /* Sortable Columns */
-        th.sortable {
-            cursor: pointer;
+        .table th.sticky-5, .table td.sticky-5 { 
+            position: sticky;
+            left: 570px;
         }
-
-        th.sortable:hover {
-            background-color: #f1f1f1;
+        /* Header cells that are both sticky (column) and fixed (row) */
+        .table th.sticky, 
+        .table th.sticky-2,
+        .table th.sticky-3,
+        .table th.sticky-4,
+        .table th.sticky-5 {
+            z-index: 4;
+            background-color: #28587b !important;
+        }
+        /* Ensure sticky columns maintain their background */
+        .table td.sticky,
+        .table td.sticky-2,
+        .table td.sticky-3,
+        .table td.sticky-4,
+        .table td.sticky-5 {
+            background-color: #3a7ca5 !important;
+            z-index: 2;
+        }
+        .sortable { cursor: pointer; }
+        .sortable:hover { text-decoration: underline; }
+        @media (max-width: 768px) {
+            .main-card, .table-wrapper {
+                padding: 1rem;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
-<body class="container">
-    <h1 class="mt-5">Upcoming Games</h1>
-
-    <!-- Date Range Form -->
-    <form method="POST" class="row g-3 mt-3">
-        {% csrf_token %}
-        <div class="col-md-6">
-            <label for="startdate" class="form-label">Start Date</label>
-            <input type="date" id="startdate" name="startdate" class="form-control" required>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'index' %}"><i class="fas fa-futbol"></i> Data Hub</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'football_data' %}active{% endif %}" href="{% url 'football_data' %}">League Data</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'visualisation' %}active{% endif %}" href="{% url 'visualisation' %}">Team Visualisations</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'league_visualisation' %}active{% endif %}" href="{% url 'league_visualisation' %}">League Visualisations</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'upcoming_games' %}active{% endif %}" href="{% url 'upcoming_games' %}">Upcoming Games</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'correlations' %}active{% endif %}" href="{% url 'correlations' %}">Correlations</a>
+                    </li>
+                </ul>
+            </div>
+            <span class="navbar-text">
+                Bringing you the latest football data
+            </span>
         </div>
-        <div class="col-md-6">
-            <label for="enddate" class="form-label">End Date</label>
-            <input type="date" id="enddate" name="enddate" class="form-control" required>
-        </div>
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">Fetch Games</button>
-        </div>
-    </form>
+    </nav>
 
-    <!-- Error Message -->
-    {% if error_message %}
-        <div class="alert alert-danger mt-3">
-            {{ error_message }}
+    <div class="container">
+        <div class="main-card">
+            <div class="d-flex align-items-center mb-4">
+                <i class="fas fa-futbol football-icon"></i>
+                <h1 class="mb-0">Upcoming Games</h1>
+            </div>
+            <form method="post" class="row g-3 mb-4">
+                {% csrf_token %}
+                <div class="col-md-5">
+                    <label for="startdate" class="form-label">Start Date</label>
+                    <input type="date" id="startdate" name="startdate" class="form-control" required>
+                </div>
+                <div class="col-md-5">
+                    <label for="enddate" class="form-label">End Date</label>
+                    <input type="date" id="enddate" name="enddate" class="form-control" required>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Get Games</button>
+                </div>
+            </form>
+            {% if error_message %}
+                <div class="alert alert-danger">{{ error_message }}</div>
+            {% endif %}
+            {% if games %}
+                <div class="table-wrapper mt-4">
+                    <table class="table table-striped" id="games-table">
+                        <thead>
+                            <tr>
+                                <th class="sticky sortable">Game Date</th>
+                                <th class="sticky sticky-2 sortable">League</th>
+                                <th class="sticky sticky-3 sortable">Home Team</th>
+                                <th class="sticky sticky-4 sortable">Away Team</th>
+                                <th class="sticky sticky-5 sortable">Season</th>
+                                <th class="sortable">Status</th>
+                                <th class="sortable">Game Week</th>
+                                <th class="sortable">Home Corners Avg</th>
+                                <th class="sortable">Away Corners Avg</th>
+                                <th class="sortable">Corners Diff</th>
+                                <th class="sortable">Home Shots</th>
+                                <th class="sortable">Away Shots</th>
+                                <th class="sortable">Shots Diff</th>
+                                <th class="sortable">Home Shots on Target</th>
+                                <th class="sortable">Away Shots on Target</th>
+                                <th class="sortable">Shots on Target Diff</th>
+                                <th class="sortable">Home Yellow Cards</th>
+                                <th class="sortable">Away Yellow Cards</th>
+                                <th class="sortable">Yellow Cards Diff</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for game in games %}
+                                <tr>
+                                    <td class="sticky">{{ game.date }}</td>
+                                    <td class="sticky sticky-2">
+                                        <a href="{% url 'football_data' %}?league={{ game.league }}&season={{ game.season }}" style="color:#fff; font-weight:600; text-decoration:underline;">{{ game.league }}</a>
+                                    </td>
+                                    <td class="sticky sticky-3">{{ game.home_team_name }}</td>
+                                    <td class="sticky sticky-4">{{ game.away_team_name }}</td>
+                                    <td class="sticky sticky-5">{{ game.season }}</td>
+                                    <td>{{ game.status }}</td>
+                                    <td>{{ game.game_week }}</td>
+                                    <td>{{ game.home_corners_avg }}</td>
+                                    <td>{{ game.away_corners_avg }}</td>
+                                    <td>{{ game.corners_diff }}</td>
+                                    <td>{{ game.home_shots }}</td>
+                                    <td>{{ game.away_shots }}</td>
+                                    <td>{{ game.shots_diff }}</td>
+                                    <td>{{ game.home_shots_on_target }}</td>
+                                    <td>{{ game.away_shots_on_target }}</td>
+                                    <td>{{ game.shots_on_target_diff }}</td>
+                                    <td>{{ game.home_yellow_cards }}</td>
+                                    <td>{{ game.away_yellow_cards }}</td>
+                                    <td>{{ game.yellow_cards_diff }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
         </div>
-    {% endif %}
-
-    <!-- Games Table -->
-    {% if games %}
-        <div class="table-container">
-            <table id="games-table" class="table table-striped mt-3">
-                <thead>
-                    <tr>
-                        <th class="sticky sortable">Game Date</th>
-                        <th class="sticky sticky-2 sortable">League</th>
-                        <th class="sticky sticky-3 sortable">Home Team</th>
-                        <th class="sticky sticky-4 sortable">Away Team</th>
-                        <th class="sortable">Season</th>
-                        <th class="sortable">Status</th>
-                        <th class="sortable">Game Week</th>
-                        <th class="sortable">Home Corners Avg</th>
-                        <th class="sortable">Away Corners Avg</th>
-                        <th class="sortable">Corners Diff</th>
-                        <th class="sortable">Home Shots</th>
-                        <th class="sortable">Away Shots</th>
-                        <th class="sortable">Shots Diff</th>
-                        <th class="sortable">Home Shots on Target</th>
-                        <th class="sortable">Away Shots on Target</th>
-                        <th class="sortable">Shots on Target Diff</th>
-                        <th class="sortable">Home Yellow Cards</th>
-                        <th class="sortable">Away Yellow Cards</th>
-                        <th class="sortable">Yellow Cards Diff</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for game in games %}
-                        <tr>
-                            <td class="sticky">{{ game.date }}</td>
-                            <td class="sticky sticky-2">
-                                <a href="{% url 'football_data' %}?league={{ game.league }}&season={{ game.season }}" class="text-primary">
-                                    {{ game.league }}
-                                </a>
-                            </td>
-                            <td class="sticky sticky-3">{{ game.home_team_name }}</td>
-                            <td class="sticky sticky-4">{{ game.away_team_name }}</td>
-                            <td>{{ game.season }}</td>
-                            <td>{{ game.status }}</td>
-                            <td>{{ game.game_week }}</td>
-                            <td>{{ game.home_corners_avg }}</td>
-                            <td>{{ game.away_corners_avg }}</td>
-                            <td>{{ game.corners_diff }}</td>
-                            <td>{{ game.home_shots }}</td>
-                            <td>{{ game.away_shots }}</td>
-                            <td>{{ game.shots_diff }}</td>
-                            <td>{{ game.home_shots_on_target }}</td>
-                            <td>{{ game.away_shots_on_target }}</td>
-                            <td>{{ game.shots_on_target_diff }}</td>
-                            <td>{{ game.home_yellow_cards }}</td>
-                            <td>{{ game.away_yellow_cards }}</td>
-                            <td>{{ game.yellow_cards_diff }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% endif %}
-
-    <a href="{% url 'football_data' %}" class="btn btn-secondary mt-3">Back to League Data</a>
-
+    </div>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const table = document.getElementById("games-table");
+            if (!table) return;
             const headers = table.querySelectorAll("th.sortable");
-
             headers.forEach((header, index) => {
                 header.addEventListener("click", () => {
                     const tbody = table.querySelector("tbody");
                     const rows = Array.from(tbody.querySelectorAll("tr"));
                     const isAscending = header.classList.contains("asc");
-
                     rows.sort((rowA, rowB) => {
                         const cellA = rowA.children[index].innerText.trim();
                         const cellB = rowB.children[index].innerText.trim();
-
                         const valA = isNaN(cellA) ? cellA.toLowerCase() : parseFloat(cellA) || 0;
                         const valB = isNaN(cellB) ? cellB.toLowerCase() : parseFloat(cellB) || 0;
-
                         if (valA < valB) return isAscending ? 1 : -1;
                         if (valA > valB) return isAscending ? -1 : 1;
                         return 0;
                     });
-
                     headers.forEach((header) => header.classList.remove("asc", "desc"));
                     header.classList.toggle("asc", !isAscending);
                     header.classList.toggle("desc", isAscending);
-
                     rows.forEach((row) => tbody.appendChild(row));
                 });
             });
